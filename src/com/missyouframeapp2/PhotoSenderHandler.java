@@ -17,10 +17,12 @@ public class PhotoSenderHandler extends AsyncTask<String, Void, String> {
 	private static final String TAG = "MissyouFrameApp";
 	private final FileDescriptor fd;
 	private final String user;
+	private String fileExtension;
 
-	public PhotoSenderHandler(FileDescriptor fd, String user) {
+	public PhotoSenderHandler(FileDescriptor fd, String user, String fileExtension) {
 		this.fd = fd;
 		this.user = user;
+		this.fileExtension = fileExtension;
 	}
 	
 	@Override
@@ -31,13 +33,12 @@ public class PhotoSenderHandler extends AsyncTask<String, Void, String> {
 		byte[] imageData = readAndClose(bis);
 		
 		Log.i(TAG, "received parameter");
-		RestAdapter adapter = new RestAdapter.Builder().setEndpoint("http://192.168.1.148:8080").build();
+		RestAdapter adapter = new RestAdapter.Builder().setEndpoint("http://app.missyouframe.com:9090").build();
 		
 		PhotosManipulationClient service = adapter.create(PhotosManipulationClient.class);
-//		TypedFile photo = new TypedFile("multipart/form-data", new File(params[0]));
 		TypedByteArray photo = new TypedByteArray("multipart/form-data", imageData);
 		
-		res = service.createPhoto(user, photo);
+		res = service.createPhoto(user, photo, fileExtension);
 		Log.i(TAG, "res: " + res);
 	
 		return res;

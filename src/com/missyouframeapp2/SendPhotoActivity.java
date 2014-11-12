@@ -140,34 +140,30 @@ public class SendPhotoActivity extends Activity {
 		
 		if (Intent.ACTION_SEND.equals(action) && type != null) {
 			if (type.startsWith("image/")) {
-				handleSendImage(intent, type);
+				handleIntent(intent, type);
 			}
 		}
 	}
-	private void handleSendImage(Intent intent, String type) {
+	private void handleIntent(Intent intent, String type) {
 		Log.v("APP", "handleSendImage");
+		final String fileExtension = type.substring(type.lastIndexOf("/"));
 		Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-		
-		
+
 		if (imageUri != null) {
-			Log.v("APP", "imageUri not null. ");
 			
 			ImageView view = (ImageView) findViewById(R.id.fullscreen_content); 
 			if (view != null) {
-				try {
-					Log.v(TAG, "Sending Image via email");
-					view.setImageURI(imageUri);
+				view.setImageURI(imageUri);
+			}
 
-					ParcelFileDescriptor mInputPFD = getContentResolver().openFileDescriptor(imageUri, "r");
-					new PhotoSenderHandler(mInputPFD.getFileDescriptor(),
-							"mariohct").execute();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					Log.e(TAG, "File not found.");
-				} catch (Exception e) {
-					e.printStackTrace();
-					Log.e(TAG, "Error displaying the image");
-				}
+			try {
+				//Sends the image to the cloud backend
+				ParcelFileDescriptor mInputPFD = getContentResolver().openFileDescriptor(imageUri, "r");
+				new PhotoSenderHandler(mInputPFD.getFileDescriptor(),
+						"mario", "bla" + "." + fileExtension).execute();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				Log.e(TAG, "File not found.");
 			}
 		}
 	}
