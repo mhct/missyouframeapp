@@ -2,6 +2,8 @@ package com.missyouframeapp2;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import retrofit.RestAdapter;
 import retrofit.mime.TypedFile;
@@ -17,12 +19,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.text.InputFilter.LengthFilter;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -60,6 +66,9 @@ public class SendPhotoActivity extends Activity {
 	 * The instance of the {@link SystemUiHider} for this activity.
 	 */
 	private SystemUiHider mSystemUiHider;
+
+	private String username;
+	private ProgressBar mUploadProgress;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -133,6 +142,8 @@ public class SendPhotoActivity extends Activity {
 		findViewById(R.id.dummy_button).setOnTouchListener(
 				mDelayHideTouchListener);
 		
+		mUploadProgress = (ProgressBar) findViewById(R.id.upload_progress_bar);
+		username = getString(R.string.username);
 		
 		Intent intent = getIntent();
 		String action = intent.getAction();
@@ -144,30 +155,46 @@ public class SendPhotoActivity extends Activity {
 			}
 		}
 	}
+	
 	private void handleIntent(Intent intent, String type) {
-		Log.v("APP", "handleSendImage");
+		Log.v(TAG, "handleSendImage");
 		final String fileExtension = type.substring(type.lastIndexOf("/"));
-		Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+		final Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
 
 		if (imageUri != null) {
 			
 			ImageView view = (ImageView) findViewById(R.id.fullscreen_content); 
 			if (view != null) {
+				Log.v(TAG, "displaying Image");
 				view.setImageURI(imageUri);
 			}
-
-			try {
-				//Sends the image to the cloud backend
-				ParcelFileDescriptor mInputPFD = getContentResolver().openFileDescriptor(imageUri, "r");
-				new PhotoSenderHandler(mInputPFD.getFileDescriptor(),
-						"mario", "bla" + "." + fileExtension).execute();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				Log.e(TAG, "File not found.");
-			}
+			
+//			Timer t = new Timer();
+//			t.schedule(new TimerTask(){
+//
+//				@Override
+//				public void run() {
+					try {
+						//Sends the image to the cloud backend
+						ParcelFileDescriptor mInputPFD = getContentResolver().openFileDescriptor(imageUri, "r");
+						new PhotoSenderHandler(mUploadProgress, mInputPFD.getFileDescriptor(),
+								username, "bla" + "." + fileExtension).execute();
+//						Looper.prepare();
+						Toast.makeText(getApplicationContext(), R.string.photo_shared, android.widget.Toast.LENGTH_SHORT).show();
+						finish();
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+						Log.e(TAG, "File not found.");
+					}
+//				}}, 1000);
 		}
 	}
 	
+	@Override
+	public void onBackPressed() {
+		Log.v(TAG, "closing Activity.");
+		finish();
+	}; 
 	
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {

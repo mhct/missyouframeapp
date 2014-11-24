@@ -11,18 +11,23 @@ import retrofit.RestAdapter;
 import retrofit.mime.TypedByteArray;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 
 public class PhotoSenderHandler extends AsyncTask<String, Void, String> {
 
 	private static final String TAG = "MissyouFrameApp";
 	private final FileDescriptor fd;
 	private final String user;
-	private String fileExtension;
+	private final String filename;
+	private final ProgressBar mUploadProgress;
+	
 
-	public PhotoSenderHandler(FileDescriptor fd, String user, String fileExtension) {
+	public PhotoSenderHandler(ProgressBar mUploadProgress, FileDescriptor fd, String user, String filename) {
+		this.mUploadProgress = mUploadProgress;
 		this.fd = fd;
 		this.user = user;
-		this.fileExtension = fileExtension;
+		this.filename = filename;
 	}
 	
 	@Override
@@ -38,14 +43,23 @@ public class PhotoSenderHandler extends AsyncTask<String, Void, String> {
 		PhotosManipulationClient service = adapter.create(PhotosManipulationClient.class);
 		TypedByteArray photo = new TypedByteArray("multipart/form-data", imageData);
 		
-		res = service.createPhoto(user, photo, fileExtension);
+		res = service.createPhoto(user, photo, filename);
 		Log.i(TAG, "res: " + res);
 	
 		return res;
 	}
 	
-
-	byte[] readAndClose(InputStream aInput){
+	@Override
+	protected void onPreExecute() {
+		mUploadProgress.setVisibility(View.VISIBLE);
+	};
+	
+	@Override
+	protected void onPostExecute(String result) {
+		mUploadProgress.setVisibility(View.GONE);
+	}
+	
+	private byte[] readAndClose(InputStream aInput){
 	    //carries the data from input to output :    
 	    byte[] bucket = new byte[32*1024]; 
 	    ByteArrayOutputStream result = null; 
